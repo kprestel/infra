@@ -1,0 +1,33 @@
+---
+- hosts: pve_main
+  become: true
+  handlers:
+    - name: "restart sanoid.timer"
+      service: 
+        name: sanoid.timer
+        state: restarted
+  tasks:
+    - name: Install sanoid
+      script:
+        chdir: "/opt"
+        cmd: "./bin/install-sanoid.sh"
+        creates: /usr/sbin/sanoid
+    - name: Start sanoid timer service
+      service:
+        name: sanoid.timer
+        enabled: yes
+        state: started
+    - name: Copy sanoid.config
+      copy:
+        src: "./_config/sanoid.conf"
+        dest: "/etc/sanoid/sanoid.conf"
+        owner: root
+        group: root
+        mode: "0644"
+      notify: 
+        - "restart sanoid.timer"
+    - name: sanoid cron job
+      cron:
+        name: "sanoid cron"
+        user: "root"
+        job: "TZ=UTC /usr/local/bin/sanoid --cron"

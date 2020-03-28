@@ -1,0 +1,90 @@
+---
+# - name: get secrets
+#   include_vars:
+#     file: secrets.yml
+#     name: secrets
+
+# ansible_python_interpreter: /home/kp/.virtualenvs/pve/bin/python
+
+- name: Delete old Proxmox VMs
+  hosts: pve_main
+  vars_files:
+    - ./vars/vault.yml
+    - ./vars/vars.yml
+  tasks:
+    - name: Stop LXC ID 300
+      proxmox:
+        api_host: "{{ proxmox_ip }}"
+        api_user: root@pam
+        api_password: "{{ api_password }}"
+        node: proxmox_master
+        vmid: 300
+        state: stopped
+    - name: Delete LXC ID 300
+      proxmox:
+        api_host: "{{ proxmox_ip }}"
+        api_user: root@pam
+        api_password: "{{ api_password }}"
+        node: proxmox_master
+        vmid: 300
+        state: absent
+- name: Create Proxmox VMs
+  hosts: pve_main
+  vars_files:
+    - ./vars/vault.yml
+    - ./vars/vars.yml
+  tasks:
+    - name: Spin up LXC Debian machine with ID 300
+      proxmox:
+        api_host: "{{ proxmox_ip }}"
+        api_user: root@pam
+        api_password: "{{ api_password }}"
+        node: master
+        vmid: 300
+        hostname: ubuntu.home
+        ostemplate: "local:vztmpl/ubuntu-18.04-standard_18.04.1-1_amd64.tar.gz"
+        cpus: 6
+        cores: 6
+        cpuunits: 2048
+        memory: 30518
+        disk: 40
+        storage: local-zfs
+        netif: '{"net0":"name=eth0,gw=192.168.1.1,ip=192.168.1.2/24,firewall=true,bridge=vmbr0"}'
+        onboot: yes
+        unprivileged: no
+        pubkey: "{{ ssh_pubkey }}"
+        state: present
+        force: yes
+        mounts: '{"mp0":"/home,mp=/home", "mp1": "hass:200,mp=/data,backup=1,ro=0"}'
+    - name: Start debian.example.com LXC VM (ID 300)
+      proxmox:
+        api_host: "{{ proxmox_ip }}"
+        api_user: root@pam
+        api_password: "{{ api_password }}"
+        node: master
+        vmid: 300
+        state: started
+        timeout: 90
+
+- name: Wait for VM to come up
+  hosts: "docker_lxc_sys_py"
+  gather_facts: no
+  tasks:
+    - name: Wait for connection
+      wait_for_connection:
+
+- name: Update repos
+  hosts: "docker_lxc_sys_py"
+  vars_files:
+    - ./vars/vault.yml
+    - ./vars/vars.yml
+  tasks:
+    - name: apt update
+      apt:
+        update_cache: yes
+
+- name: Installing docker-compose
+  import_playbook: "docker.yml"
+
+- name: Starting containers
+  import_playbook: "plays/run-containers.yml"

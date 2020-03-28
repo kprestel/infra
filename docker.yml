@@ -1,0 +1,18 @@
+---
+# docker.yml
+
+
+
+- hosts:  "docker_lxc_sys_py"
+  gather_facts: no
+  tasks:
+  - name: Wait for connection
+    wait_for_connection:
+
+- name: Install docker + docker-compose
+  hosts: "docker_lxc_sys_py"
+  become: true
+
+  roles:
+    - role: "nickjj.docker"
+      tags: ["docker"]

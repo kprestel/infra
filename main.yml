@@ -1,0 +1,4 @@
+handlers:
+  - name: "restart sanoid.timer"
+    service: sanoid.timer
+    state: restarted
