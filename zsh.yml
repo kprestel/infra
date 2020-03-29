@@ -1,0 +1,10 @@
+- hosts: all
+  vars:
+    zsh_autosuggestions_bind_key: "^f"
+    zsh_hotkeys_extras:
+      - { hotkey: '^r', action: 'fzf-history' }
+      
+
+
+  roles:
+    - viasite-ansible.zsh

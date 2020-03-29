@@ -1,0 +1,16 @@
+containers:
+  - ubuntu:
+      ostemplate: "local:vztmpl/ubuntu-18.04-standard_18.04.1-1_amd64.tar.gz"
+      netif: '{"net0":"name=eth0,gw=192.168.1.1,ip=192.168.1.2/24,firewall=true,bridge=vmbr0"}'
+      mounts: '{"mp0":"/home,mp=/home", "mp1": "hass:200,mp=/data,backup=1,ro=0"}'
+      vmid: 300
+      cpus: 6
+      cores: 6
+      cpuunits: 2048
+      memory: 30518
+      disk: 40
+      storage: local-zfs
+      pubkey: "{{ lookup('file', '/home/kp/.ssh/id_rsa.pub') }}"
+      node: master
+      onboot: yes
+      force: yes

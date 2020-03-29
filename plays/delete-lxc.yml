@@ -1,0 +1,23 @@
+---
+- name: Delete old Proxmox VMs
+  hosts: pve_main
+  vars_files:
+    - ./vars/vault.yml
+    - ./vars/vars.yml
+  tasks:
+    - name: Stop LXC ID 300
+      proxmox:
+        api_host: "{{ proxmox_ip }}"
+        api_user: root@pam
+        api_password: "{{ api_password }}"
+        node: proxmox_master
+        vmid: 300
+        state: stopped
+    - name: Delete LXC ID 300
+      proxmox:
+        api_host: "{{ proxmox_ip }}"
+        api_user: root@pam
+        api_password: "{{ api_password }}"
+        node: proxmox_master
+        vmid: 300
+        state: absent

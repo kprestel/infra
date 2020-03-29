@@ -1,0 +1,11 @@
+---
+- name: Stop containers
+  hosts: docker_lxc
+  gather_facts: no
+  vars_files:
+    - ../vars/vars.yml
+  tasks:
+    - name: Tear down existing services
+      docker_compose:
+        project_src: "{{ docker_compose_src }}"
+        state: absent

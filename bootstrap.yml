@@ -1,8 +1,5 @@
 ---
 - hosts: pve_main
-  become: true
-  vars_files:
-    - vars/vars.yml
   vars:
     - base_packages:
         - "python3"
@@ -21,11 +18,26 @@
         - "virtualenv"
         - "zfs-zed"
         - "sudo"
-        # - "samba"
+      # - "samba"
+- hosts: docker_lxc
+  vars:
+    - base_packages:
+        - "vim"
+        - "curl"
+        - "python3"
+        - "python3-virtualenv"
+        - "zsh"
+        - "python3-pip"
+        - "vim"
+        - "python3-apt"
+        - "debhelper"
+        - "sudo"
+- name: bootstrap hosts by installing packages
+  hosts: "docker_lxc|pve_main"
+  become: true
+  vars_files:
+    - vars/vars.yml
   tasks:
-    - name: Install a list of packages
-      apt:
-        pkg: "{{ base_packages }}"
     # TODO: check if debian
     - name: Install prerequisites
       apt:
@@ -34,6 +46,11 @@
         state: latest
         force_apt_get: yes
       loop: ["aptitude"]
+    - name: Install a list of packages
+      apt:
+        pkg: "{{ base_packages }}"
+        update_cache: yes
+        state: latest
     # - name: Install base packages
     #   apt: name={{ item }} update_cache=yes state=latest
     #   loop: {{ base_packages }}
@@ -59,7 +76,12 @@
     - name: Remove dependencies that are no longer required
       apt:
         autoremove: yes
-
+- name: setup pve_main
+  hosts: "pve_main"
+  become: true
+  vars_files:
+    - vars/vars.yml
+  tasks:
     - name: Copy requirements
       copy:
         src: requirements.txt
@@ -109,3 +131,36 @@
         user: kp
         state: present
         key: "{{ lookup('file', '/home/kp/.ssh/id_rsa.pub') }}"
+
+- name: setup docker_lxc
+  hosts: "docker_lxc"
+  become: true
+  vars_files:
+    - vars/vars.yml
+  tasks:
+    - debug: msg="{{ showmevar }}"
+      tags: [never, debug]
+    - name: Create postgres user
+      user:
+        name: postgres
+        system: yes
+        state: present
+    - name: create dirs
+      file:
+        path: "/data/{{ item.dir }}"
+        owner: "{{ item.owner }}"
+        group: "{{ item.group }}"
+        state: directory
+      loop:
+        - { dir: postgres, owner: postgres, group: postgres }
+        - { dir: hass, owner: root, group: root }
+        - { dir: influx, owner: root, group: root }
+        - { dir: caddy, owner: root, group: root }
+        - { dir: mosquitto, owner: root, group: root }
+        - { dir: grafana, owner: root, group: root }
+# - name: Starting containers
+# import_playbook: "plays/run-containers.yml"
+
+# - name: Starting containers
+# import_playbook: "create-lxc.yml"
+

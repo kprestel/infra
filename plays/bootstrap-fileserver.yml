@@ -1,0 +1,24 @@
+- name: setup fileserver
+  hosts: "fileserver_lxc"
+  become: true
+  vars_files:
+    - ../vars/vars.yml
+  tasks:
+    - name: Create trf group
+      group:
+        name: trf
+        state: present
+        system: no
+    - name: Create jax user
+      user:
+        name: jax
+        password: "$6$fhN84tCvnp$WH2kYbNDK9X4V5Ej0tptSy4FVuvcfCQLQhCSYh9mEf.7Ii391aBbu9OKm7SBYL5OUr.Ny7LDUEku.SnjJ4NDD."
+        groups:
+          - trf
+        state: present
+    - name: Create kp user
+      user:
+        name: kp
+        password: "$6$cSr3VQcI$QBSCJDwDdIWKZhu3110h0TCh60hVQ71mdTBHOhvXcUApaSOrH6VS3GXmf5A.uO61K8lVy2SXmpxrNQEw.UlyL."
+        generate_ssh_key: false
+        state: present

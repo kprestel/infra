@@ -30,4 +30,4 @@
       cron:
         name: "sanoid cron"
         user: "root"
-        job: "TZ=UTC /usr/local/bin/sanoid --cron"
+        job: "TZ=UTC /usr/sbin/sanoid --cron"

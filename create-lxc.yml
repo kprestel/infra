@@ -5,29 +5,6 @@
 #     name: secrets
 
 # ansible_python_interpreter: /home/kp/.virtualenvs/pve/bin/python
-
-- name: Delete old Proxmox VMs
-  hosts: pve_main
-  vars_files:
-    - ./vars/vault.yml
-    - ./vars/vars.yml
-  tasks:
-    - name: Stop LXC ID 300
-      proxmox:
-        api_host: "{{ proxmox_ip }}"
-        api_user: root@pam
-        api_password: "{{ api_password }}"
-        node: proxmox_master
-        vmid: 300
-        state: stopped
-    - name: Delete LXC ID 300
-      proxmox:
-        api_host: "{{ proxmox_ip }}"
-        api_user: root@pam
-        api_password: "{{ api_password }}"
-        node: proxmox_master
-        vmid: 300
-        state: absent
 - name: Create Proxmox VMs
   hosts: pve_main
   vars_files:
@@ -52,19 +29,43 @@
         netif: '{"net0":"name=eth0,gw=192.168.1.1,ip=192.168.1.2/24,firewall=true,bridge=vmbr0"}'
         onboot: yes
         unprivileged: no
-        pubkey: "{{ ssh_pubkey }}"
+        pubkey: "{{ lookup('file', '/home/kp/.ssh/id_rsa.pub') }}"
         state: present
-        force: yes
         mounts: '{"mp0":"/home,mp=/home", "mp1": "hass:200,mp=/data,backup=1,ro=0"}'
-    - name: Start debian.example.com LXC VM (ID 300)
+
+    - name: Spin up LXC fileserver machine with ID 301
       proxmox:
         api_host: "{{ proxmox_ip }}"
         api_user: root@pam
         api_password: "{{ api_password }}"
         node: master
-        vmid: 300
+        vmid: 301
+        hostname: fileserver-lxc
+        ostemplate: "local:vztmpl/debian-9-turnkey-fileserver_15.0-1_amd64.tar.gz"
+        cpus: 1
+        cores: 1
+        memory: 8048
+        disk: 25
+        storage: local-zfs
+        netif: '{"net0":"name=eth0,gw=192.168.1.1,ip=192.168.1.3/24,firewall=true,bridge=vmbr0"}'
+        onboot: yes
+        unprivileged: no
+        pubkey: "{{ lookup('file', '/home/kp/.ssh/id_rsa.pub') }}"
+        state: present
+        mounts: '{"mp0":"/share,mp=/data"}'
+
+    - name: Start ubuntu.home LXC VM (ID 300)
+      proxmox:
+        api_host: "{{ proxmox_ip }}"
+        api_user: root@pam
+        api_password: "{{ api_password }}"
+        node: master
+        vmid: "{{ item }}"
         state: started
         timeout: 90
+      loop:
+        - 300
+        - 301
 
 - name: Wait for VM to come up
   hosts: "docker_lxc_sys_py"
