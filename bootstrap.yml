@@ -1,39 +1,6 @@
 ---
-- hosts: pve_main
-  vars:
-    - base_packages:
-        - "python3"
-        - "python3-virtualenv"
-        - "zsh"
-        - "python3-pip"
-        - "vim"
-        - "python3-apt"
-        - "debhelper"
-        - "libcapture-tiny-perl"
-        - "libconfig-inifiles-perl"
-        - "pv"
-        - "lzop"
-        - "mbuffer"
-        - "git"
-        - "virtualenv"
-        - "zfs-zed"
-        - "sudo"
-      # - "samba"
-- hosts: docker_lxc
-  vars:
-    - base_packages:
-        - "vim"
-        - "curl"
-        - "python3"
-        - "python3-virtualenv"
-        - "zsh"
-        - "python3-pip"
-        - "vim"
-        - "python3-apt"
-        - "debhelper"
-        - "sudo"
 - name: bootstrap hosts by installing packages
-  hosts: "docker_lxc|pve_main"
+  hosts: "base"
   become: true
   vars_files:
     - vars/vars.yml
@@ -131,6 +98,31 @@
         user: kp
         state: present
         key: "{{ lookup('file', '/home/kp/.ssh/id_rsa.pub') }}"
+
+- name: setup samba on pve_main
+  hosts: "pve_main"
+  become: true
+  roles:
+    - bertvv.samba
+  vars:
+    samba_guest_account: "nobody"
+    samba_load_homes: true
+    samba_local_master: true
+    samba_shares_root: "/share"
+    samba_users:
+      - name: rose
+        password: "JaxTeller2"
+      - name: kp
+        password: "Hoga204!"
+    samba_shares:
+      - name: trf
+        comment: "Links Court Exclusive"
+        group: trf
+        write_list: +trf
+        path: /share/trf
+        browseable: true
+        guest_ok: true
+        public: yes
 
 - name: setup docker_lxc
   hosts: "docker_lxc"

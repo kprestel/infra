@@ -1,0 +1,11 @@
+base_packages:
+  - "vim"
+  - "curl"
+  - "python3"
+  - "python3-virtualenv"
+  - "zsh"
+  - "python3-pip"
+  - "vim"
+  - "python3-apt"
+  - "debhelper"
+  - "sudo"
