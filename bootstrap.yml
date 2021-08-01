@@ -153,6 +153,6 @@
 # - name: Starting containers
 # import_playbook: "plays/run-containers.yml"
 
-# - name: Starting containers
-# import_playbook: "create-lxc.yml"
+- name: Starting containers
+  import_playbook: "create-lxc.yml"
 

@@ -1,0 +1,7 @@
+---
+- name: Docker stuff
+  hosts: hassio
+  become: true
+  roles:
+    - role: "nickjj.docker"
+      tags: ["docker"]

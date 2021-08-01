@@ -1,0 +1,11 @@
+---
+- hosts: hassio
+  roles:
+    - role: geerlingguy.nfs 
+      vars: 
+        nfs_exports: ["/mnt/data/workspace *(rw,sync,no_root_squash)"]
+
+- hosts: all
+  roles:
+    - geerlingguy.ntp
+

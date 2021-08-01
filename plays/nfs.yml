@@ -1,0 +1,3 @@
+- hosts: hassio
+  roles:
+    - { role: geerlingguy.nfs }

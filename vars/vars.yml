@@ -7,3 +7,4 @@ lxc_containers_dl:
   - "debian-9.0-standard_9.0-2_amd64.tar.gz"
 docker_compose_src: /home/kp/hassio
 showmevar: "test"
+kp_password: "{{ vault_kp_password }}"

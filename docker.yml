@@ -1,16 +1,13 @@
 ---
 # docker.yml
-
-
-
-- hosts:  "docker_lxc_sys_py"
+- hosts:  "hassio"
   gather_facts: no
   tasks:
   - name: Wait for connection
     wait_for_connection:
 
 - name: Install docker + docker-compose
-  hosts: "docker_lxc_sys_py"
+  hosts: "hassio"
   become: true
 
   roles:

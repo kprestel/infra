@@ -34,27 +34,6 @@
         state: present
         mounts: '{"mp0":"/home,mp=/home", "mp1": "hass:200,mp=/data,backup=1,ro=0"}'
 
-    - name: Spin up LXC fileserver machine with ID 301
-      proxmox:
-        api_host: "{{ proxmox_ip }}"
-        api_user: root@pam
-        api_password: "{{ api_password }}"
-        node: master
-        vmid: 301
-        hostname: fileserver-lxc
-        ostemplate: "local:vztmpl/debian-9-turnkey-fileserver_15.0-1_amd64.tar.gz"
-        cpus: 1
-        cores: 1
-        memory: 8048
-        disk: 25
-        storage: local-zfs
-        netif: '{"net0":"name=eth0,gw=192.168.1.1,ip=192.168.1.3/24,firewall=true,bridge=vmbr0"}'
-        onboot: yes
-        unprivileged: no
-        pubkey: "{{ lookup('file', '/home/kp/.ssh/id_rsa.pub') }}"
-        state: present
-        mounts: '{"mp0":"/share,mp=/data"}'
-
     - name: Spin up pihole
       proxmox:
         api_host: "{{ proxmox_ip }}"
@@ -76,7 +55,30 @@
         pubkey: "{{ lookup('file', '/home/kp/.ssh/id_rsa.pub') }}"
         state: present
 
-    - name: Start ubuntu.home LXC VM (ID 300)
+    - name: Spin up deconz
+      proxmox:
+        api_host: "{{ proxmox_ip }}"
+        api_user: root@pam
+        api_password: "{{ api_password }}"
+        node: master
+        vmid: 304
+        hostname: pihole.home
+        ostemplate: "local:vztmpl/ubuntu-20.04-standard_20.04-1_amd64.tar.gz"
+        cpus: 2
+        cores: 2
+        cpuunits: 2048
+        memory: 4048
+        disk: 20
+        storage: local-zfs
+        netif: '{"net0":"name=eth0,gw=192.168.1.1,ip=192.168.1.5/24,firewall=true,bridge=vmbr0"}'
+        onboot: yes
+        unprivileged: no
+        pubkey: "{{ lookup('file', '/home/kp/.ssh/id_rsa.pub') }}"
+        state: present
+
+
+
+    - name: Start lxc containers
       proxmox:
         api_host: "{{ proxmox_ip }}"
         api_user: root@pam
@@ -86,10 +88,7 @@
         state: started
         timeout: 90
       loop:
-        - 300
-        - 301
-        - 302
-
+        - 304
 - name: Wait for VM to come up
   hosts: "docker_lxc_sys_py"
   gather_facts: no
@@ -110,5 +109,5 @@
 - name: Installing docker-compose
   import_playbook: "docker.yml"
 
-- name: Starting containers
-  import_playbook: "plays/run-containers.yml"
+# - name: Starting containers
+#   import_playbook: "plays/run-containers.yml"

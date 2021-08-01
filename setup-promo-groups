@@ -1,0 +1,5 @@
+pveum groupadd monitoring -comment 'Monitoring group'
+pveum aclmod / -group monitoring -role PVEAuditor
+pveum useradd pve_exporter@pve
+pveum usermod pve_exporter@pve -group monitoring
+pveum passwd pve_exporter@pve
