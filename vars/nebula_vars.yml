@@ -1,5 +1,5 @@
 nebula_version: 1.2.0
-nebula_network_name: "My Nebula Mesh Network"
+nebula_network_name: "home"
 nebula_network_cidr: 24
 nebula_ca_cert_duration: "87600h1m0s" #10 years, 1 hour
 nebula_client_cert_duration: "87500h0m0s" #10 years

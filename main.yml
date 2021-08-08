@@ -1,4 +1,49 @@
-handlers:
-  - name: "restart sanoid.timer"
-    service: sanoid.timer
-    state: restarted
+---
+- name: Docker stuff
+  hosts: docker
+  become: true
+  roles:
+    - role: "nickjj.docker"
+      tags: ["docker"]
+
+- name: Restic Backup
+  hosts: master
+  vars_files:
+    - ./vars/vars.yml
+    - ./vars/vault.yml
+  roles:
+    - role: arillso.restic
+  vars:
+    restic_create_cron: true
+    restic_repos:
+      back_blaze:
+        location: "b2:prestel-backup:restic"
+        password: "{{ restic_password }}"
+        init: false
+        b2_account_id: "{{ b2_account_id }}"
+        b2_account_key: "{{ b2_account_key }}"
+    restic_backups:
+      tank:
+        name: tank
+        repo: back_blaze
+        src: /tank
+        scheduled: true
+        schedule_hour: 3
+        keep_last: 10
+
+- name: Update apt
+  hosts: all
+  become: true
+  roles:
+    - weareinteractive.apt
+  vars:
+    apt_cache_valid_time: 7200
+    apt_packages:
+      - vim
+      - tree
+      - zsh
+    apt_unattended_upgrades_notify_error_only: false
+    apt_remove_recommends: true
+    apt_remove_suggests: true
+    apt_remove_purge: true
+  

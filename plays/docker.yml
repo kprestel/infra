@@ -1,6 +1,6 @@
 ---
 - name: Docker stuff
-  hosts: hassio
+  hosts: docker
   become: true
   roles:
     - role: "nickjj.docker"

@@ -1,8 +1,8 @@
 ---
 - hosts: hassio
   roles:
-    - role: geerlingguy.nfs 
-      vars: 
+    - role: geerlingguy.nfs
+      vars:
         nfs_exports: ["/mnt/data/workspace *(rw,sync,no_root_squash)"]
 
 - hosts: all

@@ -4,7 +4,8 @@
   gather_facts: true
   become: true
   tasks:
-    - include_vars: nebula_vars.yml
+    - name: include vars
+      include_vars: nebula_vars.yml
 
     - name: Ensure /opt/nebula directory exists
       file:
@@ -42,7 +43,8 @@
         state: restarted
 
   tasks:
-    - include_vars: nebula_vars.yml
+    - name: include vars
+      include_vars: nebula_vars.yml
 
     - name: Ensure CA cert/key exists
       command:
@@ -98,7 +100,8 @@
         name: nebula
         state: restarted
   tasks:
-    - include_vars: nebula_vars.yml
+    - name: get vars
+      include_vars: nebula_vars.yml
 
     - name: Read cert/key from lighthouse
       slurp:
@@ -123,7 +126,7 @@
 
     - name: Ensure Nebula is configured
       template:
-        src: node_config.yml.j2 
+        src: node_config.yml.j2
         dest: /opt/nebula/config.yml
         owner: root
         group: root

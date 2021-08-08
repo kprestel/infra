@@ -8,3 +8,6 @@ lxc_containers_dl:
 docker_compose_src: /home/kp/hassio
 showmevar: "test"
 kp_password: "{{ vault_kp_password }}"
+restic_password: "{{ vault_restic_password }}"
+b2_account_id: "{{ vault_b2_account_id }}"
+b2_account_key: "{{ vault_b2_account_key }}"
