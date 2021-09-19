@@ -1,0 +1,5 @@
+plex_config_directory: "/opt/plex/config/"
+plex_photos_directory: "/opt/plex/photos/"
+plex_podcasts_directory: "/opt/plex/podcasts/"
+plex_music_directory: "/opt/plex/music/"
+plex_video_directory: "/opt/plex/video/"

@@ -1,0 +1,60 @@
+---
+- name: update packages
+  hosts: all
+  become: true
+  tasks:
+    - name: Set timezone
+      timezone:
+        name: "{{ ntp_timezone }}"
+      when: ansible_distribution == 'Ubuntu'
+    - name: Remove Ubuntu motd spam
+      file:
+        path: "/etc/update-motd.d/{{ item }}"
+        state: absent
+      loop:
+        - 80-livepatch
+        - 95-hwe-eol
+        - 50-motd-news
+        - 10-help-text
+      when: ansible_distribution == 'Ubuntu'
+
+- hosts: master
+  become: true
+  vars_files:
+    - 'vars/vault.yml'
+    - 'vars/vars.yml'
+  pre_tasks:
+    - name: Remove enterprise repo
+      file:
+        state: absent
+        path: /etc/apt/sources.list.d/pve-enterprise.list
+    - name: Switch to community repo
+      apt_repository:
+        repo: 'deb http://download.proxmox.com/debian/pve buster pve-no-subscription'
+        state: present
+    - name: Apt update
+      apt:
+        upgrade: true
+        update_cache: true
+        cache_valid_time: 3600
+  roles:
+    - role: ksp.master
+    - role: grog.package
+    - role: geerlingguy.pip
+    # - role: geerlingguy.samba
+    - role: geerlingguy.nfs
+    - role: geerlingguy.ntp
+
+- hosts: docker
+  become: true
+  roles:
+    - role: "nickjj.docker"
+
+- hosts: plexus
+  become: true
+  vars_files: 
+    - 'vars/vault.yml'
+    - 'vars/vars.yml'
+  roles:
+    - role: ksp.plex
+
