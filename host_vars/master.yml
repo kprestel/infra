@@ -1,0 +1,7 @@
+---
+package_list:
+  - name: net-tools
+  - name: nut
+  - name: nut-client
+  - name: nut-server
+  - name: nfs-kernel-server

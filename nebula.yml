@@ -3,10 +3,11 @@
   hosts: all
   gather_facts: true
   become: true
-  tasks:
-    - name: include vars
-      include_vars: nebula_vars.yml
+  vars_files:
+    - vars/vault.yml
+    - vars/vars.yml
 
+  tasks:
     - name: Ensure /opt/nebula directory exists
       file:
         path: /opt/nebula
@@ -43,6 +44,7 @@
         state: restarted
 
   tasks:
+
     - name: include vars
       include_vars: nebula_vars.yml
 
@@ -94,15 +96,15 @@
   hosts: nebula_nodes
   gather_facts: true
   become: true
+  vars_files:
+    - vars/vault.yml
+    - vars/vars.yml
   handlers:
     - name: Restart Nebula
       systemd:
         name: nebula
         state: restarted
   tasks:
-    - name: get vars
-      include_vars: nebula_vars.yml
-
     - name: Read cert/key from lighthouse
       slurp:
         src: "/opt/nebula/{{ item }}"

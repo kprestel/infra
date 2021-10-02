@@ -1,158 +1,50 @@
 ---
-- name: bootstrap hosts by installing packages
-  hosts: "base"
-  become: true
+- hosts: local
+  remote_user: root
+  gather_facts: true
   vars_files:
-    - vars/vars.yml
+    - "vars/vault.yml"
+    - "vars/vars.yml"
+
   tasks:
-    # TODO: check if debian
-    - name: Install prerequisites
-      apt:
+    - name: Ensure user groups exists
+      group:
         name: "{{ item }}"
-        update_cache: yes
-        state: latest
-        force_apt_get: yes
-      loop: ["aptitude"]
-    - name: Install a list of packages
-      apt:
-        pkg: "{{ base_packages }}"
-        update_cache: yes
-        state: latest
-    # - name: Install base packages
-    #   apt: name={{ item }} update_cache=yes state=latest
-    #   loop: {{ base_packages }}
+        state: present
+      loop:
+        - "{{ main_username }}"
+        - ansible
 
-    - name: Upgrade all packages to the latest version
-      apt:
-        name: "*"
-        state: latest
+    - name: Add users
+      user:
+        name: "{{ item.user }}"
+        password: "{{ item.pass }}"
+        groups:
+          - "{{ item.user }}"
+          - sudo
+        shell: /bin/bash
+      loop:
+        "{{ users }}"
+      no_log: true
 
-    - name: Update all packages to the latest version
-      apt:
-        upgrade: dist
-
-    - name: Only run "update_cache=yes" if the last one is more than 3600 seconds ago
-      apt:
-        update_cache: yes
-        cache_valid_time: 3600
-
-    - name: Remove useless packages from the cache
-      apt:
-        autoclean: yes
-
-    - name: Remove dependencies that are no longer required
-      apt:
-        autoremove: yes
-- name: setup pve_main
-  hosts: "pve_main"
-  become: true
-  vars_files:
-    - vars/vars.yml
-  tasks:
-    - name: Copy requirements
+    - name: Add sudoers file for ansible
       copy:
-        src: requirements.txt
-        dest: /root/requirements.txt
+        src: sudoer_ansible
+        dest: /etc/sudoers.d/ansible
         owner: root
         group: root
+        mode: 0440
 
-    - name: Install requirements
-      pip:
-        requirements: /root/requirements.txt
-        virtualenv: /root/ansible/
-        virtualenv_python: /usr/bin/python3
-
-    - name: Crete vmstore fs
-      zfs:
-        name: tank/vmstore
-        state: present
-        extra_zfs_properties:
-          atime: off
-          relatime: on
-    - name: Create trf group
-      group:
-        name: trf
-        state: present
-        system: no
-    - name: Create jax user
-      user:
-        name: jax
-        password: "$6$fhN84tCvnp$WH2kYbNDK9X4V5Ej0tptSy4FVuvcfCQLQhCSYh9mEf.7Ii391aBbu9OKm7SBYL5OUr.Ny7LDUEku.SnjJ4NDD."
-        groups:
-          - trf
-        generate_ssh_key: true
-        shell: "/usr/bin/zsh"
-        state: present
-    - name: Create kp user
-      user:
-        name: kp
-        password: "$6$cSr3VQcI$QBSCJDwDdIWKZhu3110h0TCh60hVQ71mdTBHOhvXcUApaSOrH6VS3GXmf5A.uO61K8lVy2SXmpxrNQEw.UlyL."
-        groups:
-          - trf
-          - sudo
-        generate_ssh_key: false
-        shell: "/usr/bin/zsh"
-        state: present
-    - name: Set kp authorized_users file
+    - name: SSH Keys
       authorized_key:
-        user: kp
+        user: "{{ item.user }}"
         state: present
-        key: "{{ lookup('file', '/home/kp/.ssh/id_rsa.pub') }}"
-
-- name: setup samba on pve_main
-  hosts: "pve_main"
-  become: true
-  roles:
-    - bertvv.samba
-  vars:
-    samba_guest_account: "nobody"
-    samba_load_homes: true
-    samba_local_master: true
-    samba_shares_root: "/share"
-    samba_users:
-      - name: rose
-        password: "JaxTeller2"
-      - name: kp
-        password: "Hoga204!"
-    samba_shares:
-      - name: trf
-        comment: "Links Court Exclusive"
-        group: trf
-        write_list: +trf
-        path: /share/trf
-        browseable: true
-        guest_ok: true
-        public: yes
-
-- name: setup docker_lxc
-  hosts: "docker_lxc"
-  become: true
-  vars_files:
-    - vars/vars.yml
-  tasks:
-    - debug: msg="{{ showmevar }}"
-      tags: [never, debug]
-    - name: Create postgres user
-      user:
-        name: postgres
-        system: yes
-        state: present
-    - name: create dirs
-      file:
-        path: "/data/{{ item.dir }}"
-        owner: "{{ item.owner }}"
-        group: "{{ item.group }}"
-        state: directory
+        key: "{{ item.ssh }}"
       loop:
-        - { dir: postgres, owner: postgres, group: postgres }
-        - { dir: hass, owner: root, group: root }
-        - { dir: influx, owner: root, group: root }
-        - { dir: caddy, owner: root, group: root }
-        - { dir: mosquitto, owner: root, group: root }
-        - { dir: grafana, owner: root, group: root }
-# - name: Starting containers
-# import_playbook: "plays/run-containers.yml"
+        - {user: "{{ main_username }}", ssh: "{{ ssh_pubkey }}"}
+        - {user: "ansible", ssh: "{{ ssh_pubkey }}"}
 
-- name: Starting containers
-  import_playbook: "create-lxc.yml"
-
+    - name: Restart ssh
+      service:
+        name: sshd
+        state: restarted

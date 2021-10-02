@@ -1,0 +1,18 @@
+- name: create datasources
+  community.grafana.grafana_datasource:
+    name: "prometheus"
+    ds_type: "prometheus"
+    ds_url: "http://prometheus:9091"
+    grafana_url: "{{ grafana_url }}"
+    grafana_user: "{{ grafana_user }}"
+    grafana_password: "{{ grafana_password }}"
+
+- name: create influx datasource
+  community.grafana.grafana_datasource:
+    name: "influxdb"
+    ds_type: "influxdb"
+    ds_url: "http://influxdb:8086"
+    grafana_url: "{{ grafana_url }}"
+    grafana_user: "{{ grafana_user }}"
+    grafana_password: "{{ grafana_password }}"
+    database: "home"

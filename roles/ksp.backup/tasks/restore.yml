@@ -1,0 +1,19 @@
+- name: "Create a backup directory"
+  file:
+    path: "/var/lib/{{ app_name }}/backups/uploads/{{ backup_file | dirname }}"
+    mode: 0777
+    owner: "{{ user_app }}"
+    state: directory
+
+- name: "Copy backup to the server"
+  copy:
+    src: "backups/{{ backup_file }}.dump.gz"
+    dest: "/var/lib/{{ app_name }}/backups/uploads/{{ backup_file }}.dump.gz"
+
+- name: "Restore the database"
+  postgresql_db:
+    state: restore
+    name: "{{db_name}}"
+    target: "/var/lib/{{ app_name }}/backups/uploads/{{ backup_file }}.dump.gz"
+  become: yes
+  become_user: postgres

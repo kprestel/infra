@@ -1,0 +1,524 @@
+version: "3.7"
+services:
+  # hass
+  mosquitto:
+    container_name: mqtt
+    image: eclipse-mosquitto:latest
+    hostname: mqtt
+    volumes:
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - ./mosquitto/passwd:/mosquitto/config/passwd
+      - ./mosquitto/cert:/mosquitto/config/cert
+      - ./mosquitto/data:/mosquitto/data
+      - /etc/localtime:/etc/localtime:ro
+    restart: unless-stopped
+    ports:
+      - "8883:8883"
+      - "1883:1883"
+    networks:
+      - hassio
+      - mqtt
+      - proxy
+
+  # hass
+  appdaemon:
+    container_name: appdaemon
+    hostname: appdaemon
+    build:
+      context: ./appdaemon
+    volumes:
+      - ./appdaemon:/conf
+      - /usr/share/hassio/homeassistant/appdaemon/apps:/conf/apps/ad
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      - hassio
+    restart: unless-stopped
+
+  postgres:
+    hostname: postgres
+    container_name: postgres
+    image: postgres:12
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres/data:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_MULTIPLE_DATABASES: "homeassistant"
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    networks:
+      - hassio
+      - matrix
+    restart: unless-stopped
+
+  # monitoring
+  grafana:
+    container_name: grafana
+    hostname: grafana
+    image: grafana/grafana:latest
+    volumes:
+      - ./grafana:/var/lib/grafana
+      - /etc/localtime:/etc/localtime:ro
+    restart: unless-stopped
+    # needed for permissions fixes
+    user: "1000"
+    networks:
+      - hassio
+      - prom
+      - proxy
+
+  caddy:
+    container_name: caddy
+    hostname: caddy
+    build:
+      context: ./caddy
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile
+      - ./caddy/data:/data
+      - ./caddy/config:/config
+      - ${WORDPRESS_SHARED_FILES}:/var/www/html
+    ports:
+      - "80:80"
+      - "443:443"
+      - "10000:10000"
+      - "9000:9000"
+      - "3000:3000"
+      - "8001:8001"
+      - "8081:8081"
+      - "8082:8082"
+      - "9100:9100"
+      - "9091:9090"
+      - "8083:8083"
+      - "8000:8000"
+      - "8384:8384"
+      - "8989:8989"
+      - "1235:1235"
+      - "1245:1245"
+      - "4321:4321"
+    environment:
+      CLOUDFLARE_API_TOKEN: ${CLOUD_FLARE_DNS_CHALLENGE_KEY}
+    networks:
+      - hassio
+      - proxy
+    restart: unless-stopped
+
+  habridge:
+    image: ghcr.io/linuxserver/habridge
+    container_name: habridge
+    restart: unless-stopped
+    environment:
+      - SEC_KEY=QxkuLm5oPpVMuB
+    ports:
+      - 50000:50000
+    volumes:
+      - "./habrdige:/config"
+    networks:
+      - proxy
+      - hassio
+
+  ddns:
+    image: joshava/cloudflare-ddns:latest
+    container_name: ddns
+    volumes:
+      - ./ddns/config.yml:/app/config.yaml
+    restart: unless-stopped
+    environment:
+      CLOUDFLARE_CONFIG: "/app/config.yaml"
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    depends_on:
+      - cadvisor
+      - node-exporter
+    networks:
+      - prom
+      - hassio
+      - proxy
+
+  # monitoring
+  cadvisor:
+    image: google/cadvisor:latest
+    container_name: cadvisor
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    networks:
+      - prom
+    restart: always
+
+  node-exporter:
+    image: prom/node-exporter
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - "--path.procfs=/host/proc"
+      - "--path.sysfs=/host/sys"
+      - --collector.filesystem.ignored-mount-points
+      - "^/(sys|proc|dev|host|etc|rootfs/var/lib/docker/containers|rootfs/var/lib/docker/overlay2|rootfs/run/docker/netns|rootfs/var/lib/docker/aufs)($$|/)"
+    networks:
+      - prom
+    restart: unless-stopped
+
+  # nextcloud infra
+  redis:
+    image: bitnami/redis:latest
+    container_name: redis
+    networks:
+      - nextcloud
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    restart: always
+
+  # general
+  influxdb:
+    image: influxdb:1.8
+    container_name: influxdb
+    ports:
+      - 8086:8086
+      - 8089:8089/udp
+    volumes:
+      - ./influxdb:/var/lib/influxdb
+    environment:
+      INFLUXDB_DB: home
+      INFLUXDB_UDP_ENABLED: 'true'
+    restart:
+      always
+    networks:
+      - hassio
+      - proxy
+      - prom
+
+  # nextcloud 
+  nextcloud:
+    image: linuxserver/nextcloud
+    container_name: nextcloud
+    volumes:
+      - ./nextcloud/config:/config
+      - ./nextcloud/data:/data
+      - "/etc/timezone:/etc/timezone:ro"
+      - "/etc/localtime:/etc/localtime:ro"
+    networks:
+      - proxy
+      - nextcloud
+    restart: unless-stopped
+    environment:
+      MYSQL_USER: nextcloud
+      MYSQL_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_HOST: mysql
+      MYSQL_DATABASE: nextcloud
+      NEXTCLOUD_ADMIN_USER: ${NEXTCLOUD_ADMIN_USER}
+      NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      PUID: 1000
+      GUID: 1000
+
+  # nextcloud infra
+  mysql:
+    image: linuxserver/mariadb
+    container_name: mysql
+    volumes:
+      - ./maria/config:/config
+      - "/etc/timezone:/etc/timezone:ro"
+      - "/etc/localtime:/etc/localtime:ro"
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_USER: nextcloud
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: nextcloud
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    networks:
+      - prom
+      - nextcloud
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - "1234:8080"
+
+  bitwarden:
+    container_name: bitwarden
+    image: vaultwarden/server
+    restart: always
+    volumes:
+      - ./bw:/data
+    environment:
+      WEBSOCKET_ENABLED: "true" 
+      SIGNUPS_ALLOWED: "true" 
+    networks:
+      - proxy
+
+  # hass
+  deconz:
+    image: marthoc/deconz:latest
+    container_name: deconz
+    network_mode: host
+    restart: unless-stopped
+    volumes:
+      - ./deconz:/root/.local/share/dresden-elektronik/deCONZ
+    devices:
+      - "/dev/ttyACM0"
+    environment:
+      - DECONZ_WEB_PORT=801
+      - DECONZ_WS_PORT=8443
+      - DECONZ_DEVICE=/dev/ttyACM0
+      - DEBUG_INFO=1
+      - DEBUG_APS=0
+      - DEBUG_ZCL=0
+      - DEBUG_ZDP=0
+      - DEBUG_OTAU=0
+      - TZ=$TZ
+    depends_on:
+      # we need caddy to come up first
+      - caddy
+
+  # misc util
+  droppy:
+    container_name: droppy
+    image: silverwind/droppy
+    volumes: 
+      - ./droppy/config:/config
+      - ./droppy/data:/files
+    networks:
+      - proxy
+    restart: unless-stopped
+
+  # misc util
+  papermerge:
+    image: ghcr.io/linuxserver/papermerge
+    container_name: papermerge
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/New_York
+    volumes:
+      - ./papermerge/config:/config
+      - ./papermerge/data:/data
+      - ./papermerge/import:/import
+    restart: unless-stopped
+    networks:
+      - proxy
+
+  # media? 
+  photoprism:
+    image: photoprism/photoprism:latest
+    container_name: photoprism
+    restart: unless-stopped
+    # Uncomment and edit the following line to set a specific user / group id:
+    # user: "1000:1000"
+    security_opt:
+      - seccomp:unconfined
+      - apparmor:unconfined
+    # Uncomment the following lines to enable regular health checks (causes automatic restarts):
+    healthcheck:
+      test: ["CMD", "photoprism", "status"]
+      interval: 60s
+      timeout: 15s
+      retries: 5
+
+    # Run "photoprism help" and "photoprism config" too see all config options and current values:
+    environment: # Run "photoprism help" and "photoprism config" too see all config options and current values
+      PHOTOPRISM_ADMIN_PASSWORD: ${PHOTOPRIMSM_ADMIN_PASSWORD}      # Initial admin password: PLEASE CHANGE!
+      PHOTOPRISM_DEBUG: "false"                      # Run in debug mode (shows additional log messages)
+      PHOTOPRISM_PUBLIC: "true"                     # No authentication required (disables password protection)
+      PHOTOPRISM_READONLY: "false"                   # Don't modify originals directory (reduced functionality)
+      PHOTOPRISM_UPLOAD_NSFW: "true"                 # Allow uploads that MAY be offensive
+      PHOTOPRISM_DETECT_NSFW: "true"                # Flag photos as private that MAY be offensive
+      PHOTOPRISM_EXPERIMENTAL: "false"               # Enable experimental features
+      PHOTOPRISM_SITE_URL: ${PHOTOPRISM_SITE_URL}
+      PHOTOPRISM_SITE_TITLE: "TRF PhotoPrism"
+      PHOTOPRISM_SITE_CAPTION: "Browse Your Pup"
+      PHOTOPRISM_SITE_DESCRIPTION: "Jax is kinda cute."
+      PHOTOPRISM_SITE_AUTHOR: "Jax The Dog"
+      PHOTOPRISM_HTTP_HOST: "0.0.0.0"
+      PHOTOPRISM_HTTP_PORT: 2342
+      PHOTOPRISM_SETTINGS_HIDDEN: "false"            # Users can not view or change settings
+      PHOTOPRISM_DATABASE_DRIVER: "mysql"          # Use MariaDB (or MySQL) instead of SQLite for improved performance
+      PHOTOPRISM_DATABASE_DSN: 'photoprism:KW2bcBZA8Ggd8Y@tcp(mariadb:3306)/photoprism?charset=utf8mb4,utf8&parseTime=true'
+      PHOTOPRISM_SIDECAR_JSON: "true"                # Automatically create JSON sidecar files using Exiftool
+      PHOTOPRISM_SIDECAR_YAML: "true"                # Automatically backup metadata to YAML sidecar files
+      PHOTOPRISM_THUMB_FILTER: "lanczos"             # Resample filter, best to worst: blackman, lanczos, cubic, linear
+      PHOTOPRISM_THUMB_UNCACHED: "false"             # Enable on-demand thumbnail rendering (high memory and cpu usage)
+      PHOTOPRISM_THUMB_SIZE: 2048                    # Pre-rendered thumbnail size limit (default 2048, min 720, max 7680)
+      PHOTOPRISM_THUMB_SIZE_UNCACHED: 7680           # On-demand rendering size limit (default 7680, min 720, max 7680)
+      PHOTOPRISM_JPEG_SIZE: 7680                     # Size limit for converted image files in pixels (720-30000)
+      PHOTOPRISM_JPEG_QUALITY: 92                    # Set to 95 for high-quality thumbnails (25-100)
+      PHOTOPRISM_DARKTABLE_PRESETS: "false"          # Use darktable presets (disables concurrent raw to jpeg conversion)
+    volumes:
+      # Storage folder for settings, index & sidecar files (DON'T REMOVE):
+      - "./photoprism:/photoprism/storage"
+      - "${PICTURES_PATH}:/photoprism/originals"
+      - "/mnt/pictures-import:/photoprism/import"
+    networks:
+      - proxy
+      - mariadb
+
+  # media infra
+  mariadb:
+   image: mariadb:10.5
+   container_name: mariadb
+   restart: unless-stopped
+   command: mysqld --transaction-isolation=READ-COMMITTED --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --max-connections=512 --innodb-rollback-on-timeout=OFF --innodb-lock-wait-timeout=50
+   volumes:
+     - "./mariadb:/var/lib/mysql"
+   environment:
+     MYSQL_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+     MYSQL_USER: photoprism
+     MYSQL_PASSWORD: ${PHOTOPRISM_MYQL_USER_PASSWORD} 
+     MYSQL_DATABASE: photoprism
+   networks:
+      - mariadb
+      
+  # misc utils
+  smokeping:
+    image: ghcr.io/linuxserver/smokeping
+    container_name: smokeping
+    environment:
+      - TZ=$TZ
+    volumes:
+      - ./smokeping/config:/config
+      - ./smokeping/data:/data
+    networks:
+      - proxy
+
+  # misc utils infra
+  freshrss_db:
+   image: mariadb:10.5
+   container_name: freshrss_db
+   restart: unless-stopped
+   command: mysqld --transaction-isolation=READ-COMMITTED --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --max-connections=512 --innodb-rollback-on-timeout=OFF --innodb-lock-wait-timeout=50
+   volumes:
+     - "./freshrss_db:/var/lib/mysql"
+     - "/etc/timezone:/etc/timezone:ro"
+     - "/etc/localtime:/etc/localtime:ro"
+   environment:
+     MYSQL_ROOT_PASSWORD: ${FRESHRSS_ROOT_DB_PASSWORD}
+     MYSQL_USER: freshrss
+     MYSQL_PASSWORD: ${FRESHRSS_DB_PASSWORD} 
+     MYSQL_DATABASE: freshrss
+   networks:
+      - freshrss
+    
+  freshrss:
+    image: ghcr.io/linuxserver/freshrss
+    container_name: freshrss
+    volumes: 
+      - "./freshrss:/config"
+    networks:
+      - proxy
+      - freshrss
+  
+  hedgedoc_mariadb:
+    image: ghcr.io/linuxserver/mariadb:latest
+    container_name: hedgedoc_mariadb
+    restart: always
+    volumes:
+      - ./hedgedoc_mariadb/data:/config
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD}
+      - MYSQL_DATABASE=hedgedoc
+      - MYSQL_USER=hedgedoc
+      - MYSQL_PASSWORD=${HEDGEDOC_DB_PASS}
+      - TZ=$TZ
+    networks:
+      - hedgedoc
+
+  hedgedoc:
+    image: ghcr.io/linuxserver/hedgedoc:latest
+    container_name: hedgedoc
+    restart: always
+    depends_on:
+      - hedgedoc_mariadb
+    volumes:
+      - ./hedgedoc:/config
+    environment:
+      - DB_HOST=hedgedoc_mariadb
+      - DB_USER=hedgedoc
+      - DB_PASS=${HEDGEDOC_DB_PASS}
+      - DB_NAME=hedgedoc
+      - DB_PORT=3306
+      - TZ=$TZ
+    networks:
+      - proxy
+      - hedgedoc
+
+  vikunja_db:
+    image: mariadb:10
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    container_name: vikunja_db
+    environment:
+      MYSQL_ROOT_PASSWORD: ${VIKUNJA_DATABASE_PASSWORD}
+      MYSQL_DATABASE: vikunja
+    volumes:
+      - ./vikunja/db:/var/lib/mysql
+    restart: unless-stopped
+    networks:
+      - vikunja
+
+  vikunja:
+    image: vikunja/api
+    environment:
+      VIKUNJA_DATABASE_HOST: vikunja_db
+      VIKUNJA_DATABASE_PASSWORD: ${VIKUNJA_DATABASE_PASSWORD}
+      VIKUNJA_DATABASE_TYPE: mysql
+      VIKUNJA_DATABASE_USER: root
+      VIKUNJA_DATABASE_DATABASE: vikunja
+    volumes: 
+      - ./vikunja/files:/app/vikunja/files
+    depends_on:
+      - vikunja_db
+    restart: unless-stopped
+    networks: 
+      - proxy
+      - vikunja
+  vikunja_frontend:
+    image: vikunja/frontend
+    restart: unless-stopped
+    networks: 
+      - proxy
+
+  syncthing:
+    image: linuxserver/syncthing
+    container_name: syncthing
+    volumes:
+      - ./syncthing/config:/config
+      # - ${PICTURES_PATH}:/data1
+      # - ./syncthing/data2:/data2
+      - /mnt/pictures-import:/data1
+    ports:
+      - 22000:22000
+      - 21027:21027/udp
+    environment:
+      PUID: 1000
+      GUID: 1000
+    restart: unless-stopped
+    networks:
+      - proxy
+
+
+networks:
+  hassio:
+    external: true
+  mqtt:
+  prom:
+  nextcloud:
+  matrix:
+  proxy:
+    external: true
+  mariadb:
+  freshrss:
+  hedgedoc:
+  vikunja:
+  loki:

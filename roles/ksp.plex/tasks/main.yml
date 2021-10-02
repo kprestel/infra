@@ -1,0 +1,48 @@
+---
+# tasks file for ksp.plex
+- name: create directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: 0755
+  with_items:
+    - "{{ plex_config_directory }}"
+    - "{{ plex_photos_directory }}"
+    - "{{ plex_podcasts_directory }}"
+    - "{{ plex_music_directory }}"
+    - "{{ plex_video_directory }}"
+
+- name: install docker-py
+  pip:
+    name: docker
+
+- name: plex docker container
+  docker_container:
+    name: plex
+    image: ghcr.io/linuxserver/plex
+    network_mode: host
+    pull: true
+    env:
+      PUID: "1000"
+      PGID: "1000"
+      VERSION: docker
+    volumes:
+      - "{{ plex_config_directory }}:/config:rw"
+      - "{{ plex_photos_directory }}:/photos:rw"
+      - "{{ plex_podcasts_directory }}:/podcasts:rw"
+      - "{{ plex_music_directory }}:/music:rw"
+      - "{{ plex_video_directory }}:/video:rw"
+
+
+- name: metube docker container
+  docker_container:
+    name: metube
+    image: alexta69/metube
+    pull: true
+    ports:
+      - "8081:8081"
+    env:
+      AUIDO_DOWNLOAD_DIR: "/audio"
+    volumes:
+      - "{{ plex_music_directory }}:/audio_dl:rw"
+      - "{{ plex_video_directory }}:/downloads:rw"

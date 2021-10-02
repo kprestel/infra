@@ -1,0 +1,14 @@
+---
+- name: create docker network
+  docker_network:
+    name: "{{ item }}"
+  with_items:
+    "{{ docker_networks }}"
+
+- name: apprise docker container
+  docker_container:
+    name: apprise
+    image: caronc/apprise:latest
+    pull: true
+    volumes:
+      - "{{ app_data }}/apprise:config"

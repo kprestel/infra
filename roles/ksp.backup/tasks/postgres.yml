@@ -1,0 +1,35 @@
+---
+- name: "Set timestamp of the backup"
+  set_fact:
+    now: "{{ lookup('pipe', 'date +%F-%T') }}"
+
+- name: "Create a backup directory"
+  file:
+    path: "{{ backup_dir }}/{{ now }}/"
+    mode: 0777
+    owner: "{{ ansible_user }}"
+    state: directory
+  tags:
+    - postgres
+    - backup
+
+- name: "Back up the database"
+  postgresql_db:
+    state: dump
+    name: "{{ db_name }}"
+    target: "{{ back_up_dir }}/{{ now }}/{{ db_name }}.dump.gz"
+  become: true
+  become_user: postgres
+  tags:
+    - postgres
+    - backup
+
+- name: "Fetch backup from the server"
+  fetch:
+    src: "{{ back_up_dir }}/{{ now }}/{{ db_name }}.dump.gz"
+    dest: "backups/{{ now }}/{{ db_name }}.dump.gz"
+    flat: true
+  tags:
+    - postgres
+    - backup
+https://nextcloud.trf-home.com/remote.php/dav

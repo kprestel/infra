@@ -4,7 +4,7 @@ system_username: jax
 
 users:
   - {user: "{{ main_username }}", pass: "{{ main_user_pass}}"}
-  - {user: "ansible", pass: "{{ ansbile_user_pass}}"}
+  - {user: "ansible", pass: "{{ ansible_user_pass}}"}
 
 package_list:
   - name: bash-completion
@@ -22,3 +22,7 @@ package_list:
   - name: software-properties-common
   - name: tmux
   - name: wget
+
+docker_users:
+  - "{{ main_username }}"
+  - "{{ system_username }}"

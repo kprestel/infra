@@ -8,6 +8,52 @@ lxc_containers_dl:
 docker_compose_src: /home/kp/hassio
 showmevar: "test"
 kp_password: "{{ vault_kp_password }}"
+main_user_pass: "{{ vault_main_userpass }}"
+ansible_user_pass: "{{ vault_ansible_pass }}"
 restic_password: "{{ vault_restic_password }}"
 b2_account_id: "{{ vault_b2_account_id }}"
 b2_account_key: "{{ vault_b2_account_key }}"
+lxc_containers:
+  - vmid: 400
+    hostname: devbox
+    os_template: "local:vztmpl/ubuntu-20.04-standard_20.04-1_amd64.tar.gz"
+    cpus: 2
+    cores: 2
+    cpu_units: 1000
+    swap: 512
+    memory: 3072
+    disk: 40
+    storage: local-zfs
+    ip: 192.168.1.3/24
+    onboot: true
+    unprivileged: false
+    nesting: 1
+    keyctl: 1
+    force: true
+  - vmid: 308
+    hostname: plexus
+    os_template: "local:vztmpl/ubuntu-20.04-standard_20.04-1_amd64.tar.gz"
+    cpus: 2
+    cores: 6
+    cpu_units: 2000
+    swap: 512
+    memory: 4072
+    disk: 400
+    storage: local-zfs
+    ip: 192.168.1.2/24
+    onboot: true
+    unprivileged: false
+    nesting: 1
+    keyctl: 1
+    password: "{{ ansible_user_pass }}"
+    force: true
+
+nebula_version: 1.2.0
+nebula_network_name: "home"
+nebula_network_cidr: 24
+nebula_ca_cert_duration: "87600h1m0s"  # 10 years, 1 hour
+nebula_client_cert_duration: "87000h0m0s"
+nebula_lighthouse_hostname: lighthouse
+nebula_lighthouse_internal_ip_addr: 192.168.77.1
+nebula_lighthouse_public_hostname: "{{ nebula_lighthouse_public_hostname }}"
+nebula_lighthouse_public_port: 4242

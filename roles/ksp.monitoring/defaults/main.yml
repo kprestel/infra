@@ -1,0 +1,4 @@
+---
+# defaults file for ksp.monitoring
+grafana_url: "https://grafana.trf-home.com"
+grafana_user: admin 

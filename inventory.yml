@@ -1,0 +1,59 @@
+all:
+  children:
+    local:
+      hosts:
+        master:
+          ansible_user: root
+        hassio:
+          ansible_user: kp
+        pihole:
+          ansible_user: root
+          ansible_python_interpreter: "/usr/bin/python3"
+        localhost:
+          ansible_user: kp
+          ansible_connection: local
+        main_pihole:
+          ansible_host: "pihole-main"
+          ansible_user: ubuntu
+        plexus:
+          ansible_python_interpreter: "/usr/bin/python3"
+          ansible_user: root
+          ansible_host: 192.168.1.2
+
+    cloud:
+      hosts:
+        nebula_lighthouse:
+
+    nebula_nodes:
+      hosts:
+        master:
+          ansible_user: root
+          nebula_internal_ip_addr: 192.168.77.2
+        hassio:
+          ansible_python_interpreter: "/usr/bin/python3"
+          ansible_user: kp
+          nebula_internal_ip_addr: 192.168.77.3
+        pihole:
+          ansible_user: root
+          ansible_python_interpreter: "/usr/bin/python3"
+          nebula_internal_ip_addr: 192.168.77.4
+        localhost:
+          ansible_user: kp
+          ansible_connection: local
+          ansible_python_interpreter: "/usr/bin/python3"
+          nebula_internal_ip_addr: 192.168.77.5
+        main_pihole:
+          ansible_user: ubuntu
+          nebula_internal_ip_addr: 192.168.77.6
+        plexus:
+          nebula_internal_ip_addr: 192.168.77.7
+
+    docker:
+      hosts:
+        hassio:
+          ansible_python_interpreter: "/usr/bin/python3"
+          ansible_user: kp
+        nebula_lighthouse:
+        plexus:
+        master:
+

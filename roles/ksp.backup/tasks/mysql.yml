@@ -1,0 +1,19 @@
+- name: Create backup destination (then to be rsync'd to remote)
+  file:
+    path: "{{ backup_dir }}/mysql_backups"
+    owner: root
+    group: mysql
+    mode: '0774'
+    state: directory
+  tags:
+    - mysql
+    - backup
+
+- name: Back up all databases
+  mysql_db:
+    state: dump
+    name: all
+    target: "{{ backup_dir }}/{{ inventory_hostname }}-{{ ansible_date_time.date }}-{{ ansible_date_time.time }}.sql"
+  tags:
+    - mysql
+    - backup
