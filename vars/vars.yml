@@ -57,3 +57,4 @@ nebula_lighthouse_hostname: lighthouse
 nebula_lighthouse_internal_ip_addr: 192.168.77.1
 nebula_lighthouse_public_hostname: "{{ nebula_lighthouse_public_hostname }}"
 nebula_lighthouse_public_port: 4242
+tailscale_auth_key: "{{ vault_tailscale_auth_key }}"

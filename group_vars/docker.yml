@@ -1,0 +1,9 @@
+docker_daemon_options:
+  log-driver: "loki"
+  log-opts:
+    loki-url: "http://192.168.1.253:3100/loki/api/v1/push"
+    loki-batch-size: 400
+    loki-external-labels: job=dockerlogs
+docker_service_state: started
+docker_service_enabled: true
+docker_restart_handler_state: restarted

@@ -3,3 +3,53 @@ ansible_user: kp
 ansible_python_interpreter: "/usr/bin/python3"
 compose_file_path: "/home/kp/workspace/docker-compose.yml"
 compose_env_file_path: "/home/kp/workspace/.env"
+app_data_root: "/mnt/data/workspace"
+
+networks:
+  - name: loki
+
+containers:
+  - name: loki
+    image: grafana/loki:2.3.0
+    state: started
+    published_ports:
+      - "3100:3100"
+    volumes:
+      - "{{ app_data_root }}/loki:/etc/loki"
+    command: "-config.file=/etc/loki/loki-local-config.yaml"
+    networks:
+      - name: loki
+    restart_policy: always
+    pull: true
+    log_driver: journald
+    log_options:
+      tag: docker/loki
+  - name: promtail
+    image: grafana/promtail:2.3.0
+    restart_policy: always
+    pull: true
+    published_ports:
+      - "9080:9080"
+      - "1514:1514"
+    volumes:
+      - "/var/log:/var/log"
+      - "{{ app_data_root }}/promtail:/etc/promtail"
+    command: "-config.file=/etc/promtail/promtail-local-config.yaml"
+    networks:
+      - name: loki
+    log_driver: journald
+    log_options:
+      tag: docker/promtial
+
+rsyslog_rule_docker:
+  rule_name: "docker"
+  priority: 20
+  template: "docker.conf.j2"
+
+rsyslog_rules:
+  - rule_name: "promtail-syslog"
+    priority: 99
+    ruleset: |
+      module(load="omfwd")
+      action(type="omfwd" target="0.0.0.0" protocol="tcp" port="1514" Template="RSYSLOG_SyslogProtocol23Format" TCP_Framing="octet-counted")
+    state: "present"

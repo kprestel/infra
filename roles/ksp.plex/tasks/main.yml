@@ -11,6 +11,7 @@
     - "{{ plex_podcasts_directory }}"
     - "{{ plex_music_directory }}"
     - "{{ plex_video_directory }}"
+    - "{{ tubesync_config_dir }}"
 
 - name: install docker-py
   pip:
@@ -45,4 +46,17 @@
       AUIDO_DOWNLOAD_DIR: "/audio"
     volumes:
       - "{{ plex_music_directory }}:/audio_dl:rw"
+      - "{{ plex_video_directory }}:/downloads:rw"
+
+- name: tubesync docker container
+  docker_container:
+    name: tubesync
+    image: ghcr.io/meeb/tubesync:latest
+    pull: true
+    ports:
+      - "4848:4848"
+    env:
+      TZ: "{{ ntp_timezone }}"
+    volumes:
+      - "{{ tubesync_config_dir }}:/config:rw"
       - "{{ plex_video_directory }}:/downloads:rw"

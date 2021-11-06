@@ -46,9 +46,22 @@
     - role: ksp.plex
 
 - hosts: hassio
-  vars_files: 
+  become: true
+  vars_files:
     - 'vars/vault.yml'
     - 'vars/vars.yml'
-  # tasks:
+  tasks:
+    - name: copy loki config files
+      ansible.builtin.copy:
+        src: loki/
+        dest: "{{ app_data_root }}/loki/"
+        mode: "0755"
+    - name: copy promtail config files
+      ansible.builtin.copy:
+        src: promtail/
+        dest: "{{ app_data_root }}/promtail"
+        mode: "0755"
 
-  
+  roles:
+    - role: hadret.rsyslog
+    - role: hadret.containers
