@@ -2,12 +2,13 @@
 - hosts: all
   tasks:
     - name: import keys from github
-      authorized_key:  
+      authorized_key:
         user: "{{ ansible_user | default('kp') }}"
         state: present
         key: https://github.com/kprestel.keys
     - name: update all packages
+
       become: true
       package:
         name: '*'
-        state: latest
+        state: present

@@ -21,6 +21,7 @@
   vars_files:
     - 'vars/vault.yml'
     - 'vars/vars.yml'
+
   roles:
     - role: ksp.master
     - role: grog.package
@@ -28,7 +29,26 @@
     - role: rossmcdonald.telegraf
     - role: geerlingguy.samba
     - role: geerlingguy.nfs
-    - role: geerlingguy.ntp
+    # - role: geerlingguy.ntp
+    - role: arillso.restic
+      vars:
+        restic_create_cron: true
+        restic_repos:
+          back_blaze:
+            location: "b2:prestel-backup:restic"
+            password: "{{ restic_password }}"
+            init: false
+            b2_account_id: "{{ b2_account_id }}"
+            b2_account_key: "{{ b2_account_key }}"
+        restic_backups:
+          tank:
+            name: tank
+            repo: back_blaze
+            src: /tank
+            scheduled: true
+            schedule_hour: 3
+            keep_last: 10
+
 
 - hosts: docker
   become: true
@@ -65,3 +85,13 @@
   roles:
     - role: hadret.rsyslog
     - role: hadret.containers
+    - role: ksp.docker-compose
+      vars:
+        - compose_file_env_path: ".env"
+        - compose_build: true
+        - compose_pull: true
+        - compose_remove_images: "all"
+        - compose_remove_orphans: "true"
+      tags:
+        - compose
+        - docker

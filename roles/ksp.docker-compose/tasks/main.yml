@@ -1,0 +1,28 @@
+---
+# tasks file for ksp.docker-compose
+- name: Copy compose file
+  ansible.builtin.copy:
+    src: "{{ compose_file }}"
+    dest: "{{ compose_file_dest }}"
+    owner: "{{ compose_file_owner | default(ansible_user) }}"
+    group: "{{ compose_file_group | default(omit) }}"
+    mode: "{{ compose_file_mode | default(omit) }}"
+
+- name: copy .env file
+  ansible.builtin.copy:
+    src: "{{ compose_file_env_path }}"
+    dest: "{{ compose_file_dest }}"
+    owner: "{{ compose_file_owner | default(ansible_user) }}"
+    group: "{{ compose_file_group | default(omit) }}"
+    mode: "{{ compose_file_mode | default(omit) }}"
+  when: compose_file_env_path is defined
+
+- name: Start services
+  community.docker.docker_compose:
+    project_src: "{{ compose_file_dest }}"
+    build: "{{ compose_build | default(false) }}"
+    # env_file: "{{ compose_env_file_path | default(omit) }}"
+    pull: "{{ compose_pull | default(false) }}"
+    remove_images: "{{ compose_remove_images | default(local) }}"
+    remove_orphans: "{{ compose_remove_orphans | default(true) }}"
+    timeout: "{{ compose_timeout | default(60) }}"
