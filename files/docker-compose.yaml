@@ -16,23 +16,21 @@ services:
       - "8883:8883"
       - "1883:1883"
     networks:
-      - hassio
       - mqtt
       - proxy
 
-  # hass
   appdaemon:
     container_name: appdaemon
     hostname: appdaemon
-    build:
-      context: ./appdaemon
+    image: acockburn/appdaemon:latest
     volumes:
       - ./appdaemon:/conf
       - /usr/share/hassio/homeassistant/appdaemon/apps:/conf/apps/ad
       - /etc/localtime:/etc/localtime:ro
-    networks:
-      - hassio
     restart: unless-stopped
+    networks:
+      - mqtt
+      - proxy
 
   postgres:
     hostname: postgres
@@ -48,7 +46,6 @@ services:
       POSTGRES_MULTIPLE_DATABASES: "homeassistant"
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     networks:
-      - hassio
       - matrix
     restart: unless-stopped
 
@@ -64,7 +61,6 @@ services:
     # needed for permissions fixes
     user: "1000"
     networks:
-      - hassio
       - prom
       - proxy
 
@@ -99,7 +95,6 @@ services:
     environment:
       CLOUDFLARE_API_TOKEN: ${CLOUD_FLARE_DNS_CHALLENGE_KEY}
     networks:
-      - hassio
       - proxy
     restart: unless-stopped
 
@@ -115,7 +110,6 @@ services:
       - "./habrdige:/config"
     networks:
       - proxy
-      - hassio
 
   ddns:
     image: joshava/cloudflare-ddns:latest
@@ -138,7 +132,6 @@ services:
       - node-exporter
     networks:
       - prom
-      - hassio
       - proxy
 
   # monitoring
@@ -194,7 +187,6 @@ services:
     restart:
       always
     networks:
-      - hassio
       - proxy
       - prom
 
@@ -260,30 +252,6 @@ services:
     networks:
       - proxy
 
-  # hass
-  deconz:
-    image: marthoc/deconz:latest
-    container_name: deconz
-    network_mode: host
-    restart: unless-stopped
-    volumes:
-      - ./deconz:/root/.local/share/dresden-elektronik/deCONZ
-    devices:
-      - "/dev/ttyACM0"
-    environment:
-      - DECONZ_WEB_PORT=801
-      - DECONZ_WS_PORT=8443
-      - DECONZ_DEVICE=/dev/ttyACM0
-      - DEBUG_INFO=1
-      - DEBUG_APS=0
-      - DEBUG_ZCL=0
-      - DEBUG_ZDP=0
-      - DEBUG_OTAU=0
-      - TZ=$TZ
-    depends_on:
-      # we need caddy to come up first
-      - caddy
-
   # misc util
   droppy:
     container_name: droppy
@@ -346,7 +314,6 @@ services:
       PHOTOPRISM_HTTP_PORT: 2342
       PHOTOPRISM_SETTINGS_HIDDEN: "false"            # Users can not view or change settings
       PHOTOPRISM_DATABASE_DRIVER: "mysql"          # Use MariaDB (or MySQL) instead of SQLite for improved performance
-      PHOTOPRISM_DATABASE_DSN: 'photoprism:KW2bcBZA8Ggd8Y@tcp(mariadb:3306)/photoprism?charset=utf8mb4,utf8&parseTime=true'
       PHOTOPRISM_SIDECAR_JSON: "true"                # Automatically create JSON sidecar files using Exiftool
       PHOTOPRISM_SIDECAR_YAML: "true"                # Automatically backup metadata to YAML sidecar files
       PHOTOPRISM_THUMB_FILTER: "lanczos"             # Resample filter, best to worst: blackman, lanczos, cubic, linear
@@ -356,6 +323,7 @@ services:
       PHOTOPRISM_JPEG_SIZE: 7680                     # Size limit for converted image files in pixels (720-30000)
       PHOTOPRISM_JPEG_QUALITY: 92                    # Set to 95 for high-quality thumbnails (25-100)
       PHOTOPRISM_DARKTABLE_PRESETS: "false"          # Use darktable presets (disables concurrent raw to jpeg conversion)
+      PHOTOPRISM_DATABASE_DSN: ${PHOTOPRISM_DATABASE_DSN}
     volumes:
       # Storage folder for settings, index & sidecar files (DON'T REMOVE):
       - "./photoprism:/photoprism/storage"
@@ -509,8 +477,6 @@ services:
 
 
 networks:
-  hassio:
-    external: true
   mqtt:
   prom:
   nextcloud:
