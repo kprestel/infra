@@ -92,6 +92,7 @@ services:
       - "1235:1235"
       - "1245:1245"
       - "4321:4321"
+      - "3100:3100"
     environment:
       CLOUDFLARE_API_TOKEN: ${CLOUD_FLARE_DNS_CHALLENGE_KEY}
     networks:
@@ -475,6 +476,14 @@ services:
     networks:
       - proxy
 
+  apprise-api:
+    image: lscr.io/linuxserver/apprise-api
+    container_name: apprise-api
+    volumes:
+      - ./apprise:/config
+    restart: unless-stopped
+    networks:
+      - proxy
 
 networks:
   mqtt:
@@ -487,4 +496,3 @@ networks:
   freshrss:
   hedgedoc:
   vikunja:
-  loki:

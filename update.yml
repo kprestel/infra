@@ -11,3 +11,10 @@
       package:
         name: '*'
         state: latest
+
+- hosts: localhost
+  tasks:
+    - name: Upgrade the system using yay
+      kewlfft.aur.aur:
+        upgrade: yes
+        use: yay
