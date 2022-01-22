@@ -1,7 +1,7 @@
 ---
 - hosts: all
   become: true
-  vars_files:
+  vars_files: &vars
     - 'vars/vault.yml'
     - 'vars/vars.yml'
   tasks:
@@ -16,6 +16,15 @@
         - 10-help-text
       when: ansible_distribution == 'Ubuntu'
 
+- hosts: all
+  become: true
+  roles:
+    - role: geerlingguy.ntp
+  vars_files:
+    *vars
+  tags: ntp
+
+
 - hosts: master
   become: true
   vars_files:
@@ -29,7 +38,6 @@
     - role: rossmcdonald.telegraf
     - role: geerlingguy.samba
     - role: geerlingguy.nfs
-    # - role: geerlingguy.ntp
     - role: arillso.restic
       vars:
         restic_create_cron: true
@@ -56,6 +64,19 @@
     - docker
   roles:
     - role: "nickjj.docker"
+
+- hosts: homebridge
+  become: true
+  tasks:
+    - name: "start up homebridge container"
+      community.docker.docker_container:
+        name: homebridge
+        image: oznu/homebridge:latest
+        network_mode: host
+        pull: true
+        restart_policy: always
+        env:
+          PUID: "1000"
 
 - hosts: plexus
   become: true
@@ -108,7 +129,7 @@
     - name: Allow the `aur_builder` user to run `sudo pacman` without a password
       ansible.builtin.lineinfile:
         path: /etc/sudoers.d/11-install-aur_builder
-        line: 'aur_builder ALL=(ALL) NOPASSWD: /usr/bin/pacman'
+        line: 'aur_builder ALL=(ALL) NOPASSWD: /usr/bin/yay'
         create: true
         validate: 'visudo -cf %s'
         mode: "0644"

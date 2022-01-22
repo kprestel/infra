@@ -18,3 +18,5 @@
       kewlfft.aur.aur:
         upgrade: yes
         use: yay
+      become: true
+      become_user: aur_builder

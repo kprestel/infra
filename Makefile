@@ -4,6 +4,9 @@ update:
 main:
 	ansible-playbook run.yml
 
+ntp:
+	ansible-playbook run.yml --tags=ntp
+	
 compose: 
 	ansible-playbook run.yml --tags=compose --limit=hassio
 

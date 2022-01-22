@@ -30,6 +30,21 @@ lxc_containers:
     nesting: 1
     keyctl: 1
     force: true
+  - vmid: 309
+    hostname: homebridge
+    os_template: "local:vztmpl/ubuntu-20.04-standard_20.04-1_amd64.tar.gz"
+    cpus: 1
+    cores: 1
+    cpu_units: 1000
+    swap: 512
+    memory: 3072
+    disk: 25
+    storage: local-zfs
+    ip: 192.168.1.91/24
+    onboot: true
+    unprivileged: false
+    nesting: 1
+    keyctl: 1
   - vmid: 308
     hostname: plexus
     os_template: "local:vztmpl/ubuntu-20.04-standard_20.04-1_amd64.tar.gz"
@@ -58,3 +73,7 @@ nebula_lighthouse_internal_ip_addr: 192.168.77.1
 nebula_lighthouse_public_hostname: "{{ nebula_lighthouse_public_hostname }}"
 nebula_lighthouse_public_port: 4242
 tailscale_auth_key: "{{ vault_tailscale_auth_key }}"
+ntp_enabled: true
+ntp_timezone: "America/New_York"
+ntp_tinker_panic: true
+ntp_package: ntp

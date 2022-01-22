@@ -16,6 +16,10 @@ all:
           ansible_python_interpreter: "/usr/bin/python3"
           ansible_user: root
           ansible_host: 192.168.1.2
+        homebridge:
+          ansible_python_interpreter: "/usr/bin/python3"
+          ansible_user: root
+          ansible_host: 192.168.1.91
 
     cloud:
       hosts:
@@ -49,4 +53,5 @@ all:
         nebula_lighthouse:
         plexus:
         master:
+        homebridge:
 
