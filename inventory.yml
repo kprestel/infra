@@ -20,6 +20,9 @@ all:
           ansible_python_interpreter: "/usr/bin/python3"
           ansible_user: root
           ansible_host: 192.168.1.91
+        vpn_hole:
+          ansible_user: ubuntu
+          ansible_host: ubuntu.lan
 
     cloud:
       hosts:
@@ -44,6 +47,8 @@ all:
           nebula_internal_ip_addr: 192.168.77.6
         plexus:
           nebula_internal_ip_addr: 192.168.77.7
+        vpn_hole:
+          nebula_internal_ip_addr: 192.168.77.8
 
     docker:
       hosts:

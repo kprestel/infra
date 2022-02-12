@@ -18,7 +18,7 @@
 
     - name: Download & Extract Nebula
       unarchive:
-        src: "https://github.com/slackhq/nebula/releases/download/v{{ nebula_version }}/nebula-linux-{{ cpu_arch | default('amd64') }}.tar.gz"
+        src: "https://github.com/slackhq/nebula/releases/download/v{{ nebula_version }}/nebula-linux-{{ ansible_architecture | default('amd64') }}.tar.gz"
         dest: "/opt/nebula"
         remote_src: true
         creates: '/opt/nebula/nebula'
@@ -37,6 +37,9 @@
   hosts: nebula_lighthouse
   gather_facts: true
   become: true
+  vars_files:
+    - vars/vault.yml
+    - vars/vars.yml
   handlers:
     - name: Restart Lighthouse
       systemd:
@@ -44,9 +47,6 @@
         state: restarted
 
   tasks:
-
-    - name: include vars
-      include_vars: nebula_vars.yml
 
     - name: Ensure CA cert/key exists
       command:
