@@ -18,19 +18,6 @@ services:
       - mqtt
       - proxy
 
-  appdaemon:
-    container_name: appdaemon
-    hostname: appdaemon
-    image: acockburn/appdaemon:latest
-    volumes:
-      - ./appdaemon:/conf
-      - /usr/share/hassio/homeassistant/appdaemon/apps:/conf/apps/ad
-      - /etc/localtime:/etc/localtime:ro
-    restart: unless-stopped
-    networks:
-      - mqtt
-      - proxy
-
   postgres:
     hostname: postgres
     container_name: postgres
