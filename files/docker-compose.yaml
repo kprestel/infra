@@ -1,6 +1,5 @@
 version: "3.7"
 services:
-  # hass
   mosquitto:
     container_name: mqtt
     image: eclipse-mosquitto:latest
@@ -169,6 +168,7 @@ services:
     container_name: redis
     networks:
       - nextcloud
+      - redis
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD}
     restart: always
@@ -279,7 +279,6 @@ services:
     restart: unless-stopped
     networks:
       - proxy
-
   # media? 
   photoprism:
     image: photoprism/photoprism:latest
@@ -476,15 +475,74 @@ services:
     networks:
       - proxy
 
-  apprise-api:
-    image: lscr.io/linuxserver/apprise-api
-    container_name: apprise-api
-    volumes:
-      - ./apprise:/config
+  # apprise-api:
+  #   image: lscr.io/linuxserver/apprise-api
+  #   container_name: apprise-api
+  #   volumes:
+  #     - ./apprise:/config
+  #   restart: unless-stopped
+  #   networks:
+  #     - proxy
+
+  paperless_redis:
+    image: redis:6.0
     restart: unless-stopped
+    volumes:
+      - ./paperless/redis/data:/data
     networks:
+      - paperless
+  paperless_db:
+    image: postgres:13
+    restart: unless-stopped
+    volumes:
+      - ./paperless/db/data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: paperless
+      POSTGRES_USER: paperless
+      POSTGRES_PASSWORD: ${PAPERLESS_POSTGRES_PASSWORD}
+    networks:
+      - paperless
+  paperless:
+    image: ghcr.io/paperless-ngx/paperless-ngx:latest
+    restart: unless-stopped
+    depends_on:
+      - paperless_db
+      - paperless_redis
+      - gotenberg
+      - tika
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    volumes:
+      - ./paperless/data:/usr/src/paperless/data
+      - ./paperless/media:/usr/src/paperless/media
+      - ./paperless/export:/usr/src/paperless/export
+      - ./paperless/consume:/usr/src/paperless/consume
+    environment:
+      PAPERLESS_REDIS: redis://paperless_redis:6379
+      PAPERLESS_DBHOST: paperless_db
+      PAPERLESS_TIKA_ENABLED: 1
+      PAPERLESS_TIKA_GOTENBERG_ENDPOINT: http://gotenberg:3000
+      PAPERLESS_TIKA_ENDPOINT: http://tika:9998
+      PAPERLESS_DBPASS: ${PAPERLESS_POSTGRES_PASSWORD}
+      PAPERLESS_ADMIN_USER: ${PAPERLESS_ADMIN_USER}
+      PAPERLESS_ADMIN_PASSWORD: ${PAPERLESS_ADMIN_PASSWORD}
+      PAPERLESS_SECRET_KEY: ${PAPERLESS_SECRET_KEY}
+    networks:
+      - paperless
       - proxy
 
+  gotenberg:
+    image: gotenberg/gotenberg:7
+    restart: unless-stopped
+    environment:
+      CHROMIUM_DISABLE_ROUTES: 1
+
+  tika:
+    image: apache/tika
+    restart: unless-stopped
 networks:
   mqtt:
   prom:
@@ -496,3 +554,5 @@ networks:
   freshrss:
   hedgedoc:
   vikunja:
+  redis:
+  paperless:

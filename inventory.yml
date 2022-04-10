@@ -4,14 +4,16 @@ all:
       hosts:
         master:
           ansible_user: root
+          ansible_host: 192.168.1.219
         hassio:
           ansible_user: kp
+          ansible_host: 192.168.1.253
         localhost:
           ansible_user: kp
           ansible_connection: local
         main_pihole:
-          ansible_host: "pihole-main"
           ansible_user: ubuntu
+          ansible_host: 192.168.1.196
         plexus:
           ansible_python_interpreter: "/usr/bin/python3"
           ansible_user: root
