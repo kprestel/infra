@@ -517,6 +517,7 @@ services:
       PAPERLESS_ADMIN_USER: ${PAPERLESS_ADMIN_USER}
       PAPERLESS_ADMIN_PASSWORD: ${PAPERLESS_ADMIN_PASSWORD}
       PAPERLESS_SECRET_KEY: ${PAPERLESS_SECRET_KEY}
+      PAPERLESS_TIME_ZONE: ${TZ}
     networks:
       - paperless
       - proxy
@@ -526,10 +527,14 @@ services:
     restart: unless-stopped
     environment:
       CHROMIUM_DISABLE_ROUTES: 1
+    networks:
+      - paperless
 
   tika:
     image: apache/tika
     restart: unless-stopped
+    networks:
+      - paperless
 networks:
   mqtt:
   prom:

@@ -6,7 +6,7 @@
     - 'vars/vars.yml'
   tasks:
     - name: Remove Ubuntu motd spam
-      file:
+      ansible.builtin.file:
         path: "/etc/update-motd.d/{{ item }}"
         state: absent
       loop:
@@ -55,8 +55,14 @@
             src: /tank
             scheduled: true
             schedule_hour: 3
-            keep_last: 10
-
+            keep_last: 5
+          rpool:
+            name: rpool
+            repo: back_blaze
+            src: /rpool
+            scheduled: true
+            schedule_hour: 3
+            keep_last: 5
 
 - hosts: docker
   become: true
@@ -133,3 +139,4 @@
         create: true
         validate: 'visudo -cf %s'
         mode: "0644"
+
