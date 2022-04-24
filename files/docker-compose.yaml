@@ -252,20 +252,6 @@ services:
     restart: unless-stopped
 
   # misc util
-  papermerge:
-    image: ghcr.io/linuxserver/papermerge
-    container_name: papermerge
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=America/New_York
-    volumes:
-      - ./papermerge/config:/config
-      - ./papermerge/data:/data
-      - ./papermerge/import:/import
-    restart: unless-stopped
-    networks:
-      - proxy
   # media? 
   photoprism:
     image: photoprism/photoprism:latest
