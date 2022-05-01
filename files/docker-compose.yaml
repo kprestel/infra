@@ -476,7 +476,7 @@ services:
     networks:
       - paperless
   paperless:
-    image: ghcr.io/paperless-ngx/paperless-ngx:latest
+    image: ghcr.io/paperless-ngx/paperless-ngx:1.7.0
     restart: unless-stopped
     depends_on:
       - paperless_db
@@ -493,6 +493,7 @@ services:
       - ./paperless/media:/usr/src/paperless/media
       - ./paperless/export:/usr/src/paperless/export
       - ./paperless/consume:/usr/src/paperless/consume
+      - /etc/localtime:/etc/localtime:ro
     environment:
       PAPERLESS_REDIS: redis://paperless_redis:6379
       PAPERLESS_DBHOST: paperless_db
@@ -503,7 +504,8 @@ services:
       PAPERLESS_ADMIN_USER: ${PAPERLESS_ADMIN_USER}
       PAPERLESS_ADMIN_PASSWORD: ${PAPERLESS_ADMIN_PASSWORD}
       PAPERLESS_SECRET_KEY: ${PAPERLESS_SECRET_KEY}
-      PAPERLESS_TIME_ZONE: ${TZ}
+      PAPERLESS_TIME_ZONE: "America/New_York"
+      PAPERLESS_URL: ${PAPERLESS_URL}
     networks:
       - paperless
       - proxy
