@@ -237,6 +237,7 @@ services:
     environment:
       WEBSOCKET_ENABLED: "true" 
       SIGNUPS_ALLOWED: "true" 
+      ADMIN_TOKEN: ${VAULT_WARDEN_ADMIN_TOKEN}
     networks:
       - proxy
 
@@ -268,12 +269,14 @@ services:
       interval: 60s
       timeout: 15s
       retries: 5
+    ports:
+      - 2342:2342
 
     # Run "photoprism help" and "photoprism config" too see all config options and current values:
     environment: # Run "photoprism help" and "photoprism config" too see all config options and current values
       PHOTOPRISM_ADMIN_PASSWORD: ${PHOTOPRIMSM_ADMIN_PASSWORD}      # Initial admin password: PLEASE CHANGE!
       PHOTOPRISM_DEBUG: "false"                      # Run in debug mode (shows additional log messages)
-      PHOTOPRISM_PUBLIC: "true"                     # No authentication required (disables password protection)
+      PHOTOPRISM_PUBLIC: "false"                     # No authentication required (disables password protection)
       PHOTOPRISM_READONLY: "false"                   # Don't modify originals directory (reduced functionality)
       PHOTOPRISM_UPLOAD_NSFW: "true"                 # Allow uploads that MAY be offensive
       PHOTOPRISM_DETECT_NSFW: "true"                # Flag photos as private that MAY be offensive
@@ -293,7 +296,8 @@ services:
       PHOTOPRISM_THUMB_UNCACHED: "false"             # Enable on-demand thumbnail rendering (high memory and cpu usage)
       PHOTOPRISM_THUMB_SIZE: 2048                    # Pre-rendered thumbnail size limit (default 2048, min 720, max 7680)
       PHOTOPRISM_THUMB_SIZE_UNCACHED: 7680           # On-demand rendering size limit (default 7680, min 720, max 7680)
-      PHOTOPRISM_JPEG_SIZE: 7680                     # Size limit for converted image files in pixels (720-30000)
+      PHOTOPRISM_JPEG_SIZE: 30000                    # Size limit for converted image files in pixels (720-30000)
+      PHOTOPRISM_ORIGINALS_LIMIT: -1
       PHOTOPRISM_JPEG_QUALITY: 92                    # Set to 95 for high-quality thumbnails (25-100)
       PHOTOPRISM_DARKTABLE_PRESETS: "false"          # Use darktable presets (disables concurrent raw to jpeg conversion)
       PHOTOPRISM_DATABASE_DSN: ${PHOTOPRISM_DATABASE_DSN}
@@ -390,6 +394,8 @@ services:
       - DB_PASS=${HEDGEDOC_DB_PASS}
       - DB_NAME=hedgedoc
       - DB_PORT=3306
+      - CMD_DOMAIN=hedgedoc.trf-home.com
+      - CMD_PROTOCOL_USESSL=true
       - TZ=$TZ
     networks:
       - proxy

@@ -8,7 +8,7 @@
     group: "{{ compose_file_group | default(omit) }}"
     mode: "{{ compose_file_mode | default(omit) }}"
 
-- name: copy .env file
+- name: Copy .env file
   ansible.builtin.copy:
     src: "{{ compose_file_env_path }}"
     dest: "{{ compose_file_dest }}"

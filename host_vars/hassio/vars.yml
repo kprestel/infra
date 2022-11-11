@@ -52,3 +52,7 @@ rsyslog_rules:
       module(load="omfwd")
       action(type="omfwd" target="0.0.0.0" protocol="tcp" port="1514" Template="RSYSLOG_SyslogProtocol23Format" TCP_Framing="octet-counted")
     state: "present"
+
+
+simple_services:
+  - url: hass.trf-home.com
